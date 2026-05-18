@@ -16,7 +16,7 @@
 
 ## 확장 구성 요약
 
-- `backend/app/main.py`: FastAPI 엔트리포인트
+- `backend/main.py`: FastAPI 엔트리포인트
 - `frontend/`: 정적 웹 UI (Vanilla JS)
 - `tests/`: API 테스트
 - `Dockerfile`, `docker-compose.yml`: 컨테이너 실행/테스트 환경

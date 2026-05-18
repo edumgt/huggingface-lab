@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from backend.app.generator import GenerateRequest, GenerationResult, GeneratorService
 
-BASE_DIR = Path(__file__).resolve().parents[2]
+BASE_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = BASE_DIR / "frontend"
 OUTPUT_DIR = BASE_DIR / "generated"
 

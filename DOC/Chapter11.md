@@ -95,7 +95,7 @@ export HF_DATASETS_OFFLINE=1
 
 python3 moon_test.py         # 달 이미지 생성
 # or
-uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
 
 ---
@@ -120,9 +120,9 @@ Python-Generate-image/
 │   └── deploy.sh                # Docker 빌드 → k3s 이미지 임포트 → kubectl apply
 └── backend/
     ├── requirements.txt         # Python 의존성 (diffusers, transformers, torch)
+    ├── main.py                  # FastAPI 엔트리포인트
     └── app/
-        ├── main.py              # FastAPI 엔트리포인트
-        └── generator.py        # AI 생성 (diffusers) + SVG 폴백
+        └── generator.py         # AI 생성 (diffusers) + SVG 폴백
 ```
 
 ---

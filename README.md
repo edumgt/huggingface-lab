@@ -25,7 +25,7 @@
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
-uvicorn backend.app.main:app --reload
+uvicorn backend.main:app --reload
 ```
 
 브라우저에서 `http://localhost:8000` 접속.
