@@ -10,7 +10,7 @@
 
 ## 기존 구성 요약
 
-- 단일 Python 스크립트 중심 실험 (`cuda*.py`, `cpu.py`, `mp4make.py`)
+- 단일 Python 스크립트 중심 실험 (`scripts/experiments/cuda*.py`, `scripts/experiments/cpu.py`, `scripts/experiments/mp4make.py`)
 - Hugging Face `diffusers` + `torch` 기반 이미지 생성
 - `opencv`, `Pillow`, `ffmpeg` 기반 영상 후처리
 
