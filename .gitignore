@@ -1,17 +1,8 @@
 /venv
-/frames
-/frames_connected
-/output*
 *.key
-*.mp3
-*.mp4
-/a*
-/i*
-/r*
 .venv/
 /.venv/
 *.pyc
 __pycache__/
 /generated/
-moon_output.png
 hf_cache/
