@@ -3,63 +3,160 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>python-generate-image Studio</title>
+    <title>Image Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <main class="container">
-      <h1>python-generate-image Studio</h1>
+    <div class="app-layout">
 
-      <section class="panel">
-        <h2>생성 파라미터</h2>
-        <form id="generate-form" class="grid-form">
-          <label>
-            Hugging Face 모델
-            <select id="model-id" required></select>
-          </label>
+      <!-- ── Sidebar ── -->
+      <aside class="sidebar" id="sidebar">
+        <button class="new-gen-btn" id="new-gen-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="16"/>
+            <line x1="8" y1="12" x2="16" y2="12"/>
+          </svg>
+          <span>새 생성</span>
+        </button>
 
-          <label>
-            결과 타입
-            <select id="output-type" required>
+        <div class="sidebar-section">
+          <p class="section-title">설정</p>
+
+          <div class="setting-group">
+            <label class="setting-label">모델</label>
+            <select id="model-id" class="setting-select"></select>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">출력 타입</label>
+            <select id="output-type" class="setting-select">
               <option value="image">이미지</option>
-              <option value="video">동영상(미리보기 GIF)</option>
+              <option value="video">동영상 미리보기</option>
             </select>
-          </label>
+          </div>
 
-          <label class="image-only">
-            이미지 Width
-            <input id="width" type="number" min="256" max="1536" step="64" value="768" />
-          </label>
+          <div class="setting-group image-only">
+            <label class="setting-label">Width</label>
+            <input id="width" type="number" min="256" max="1536" step="64" value="768" class="setting-input" />
+          </div>
 
-          <label class="image-only">
-            이미지 Height
-            <input id="height" type="number" min="256" max="1536" step="64" value="768" />
-          </label>
+          <div class="setting-group image-only">
+            <label class="setting-label">Height</label>
+            <input id="height" type="number" min="256" max="1536" step="64" value="768" class="setting-input" />
+          </div>
 
-          <label class="video-only hidden">
-            동영상 사이즈
-            <select id="video-size">
-              <option value="square">정사각형 (768x768)</option>
-              <option value="landscape">가로형 (1024x576)</option>
-              <option value="portrait">세로형 (576x1024)</option>
+          <div class="setting-group video-only hidden">
+            <label class="setting-label">동영상 사이즈</label>
+            <select id="video-size" class="setting-select">
+              <option value="square">정사각형 (768×768)</option>
+              <option value="landscape">가로형 (1024×576)</option>
+              <option value="portrait">세로형 (576×1024)</option>
             </select>
-          </label>
+          </div>
+        </div>
+      </aside>
 
-          <label class="span-2">
-            프롬프트
-            <textarea id="prompt" rows="4" required placeholder="생성할 장면을 입력하세요"></textarea>
-          </label>
+      <!-- ── Main wrapper ── -->
+      <div class="main-wrapper">
 
-          <button id="submit-button" type="submit">생성하기</button>
-        </form>
-      </section>
+        <!-- Topbar -->
+        <header class="topbar">
+          <button class="icon-btn" id="sidebar-toggle" aria-label="메뉴 열기/닫기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <div class="topbar-brand">
+            <svg class="brand-star" width="22" height="22" viewBox="0 0 24 24">
+              <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" fill="url(#topGrad)"/>
+              <defs>
+                <linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#4285f4"/>
+                  <stop offset="50%" stop-color="#9b72cb"/>
+                  <stop offset="100%" stop-color="#d96570"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span>Image Studio</span>
+          </div>
+        </header>
 
-      <section class="panel">
-        <h2>결과</h2>
-        <p id="status" class="muted">대기 중</p>
-        <img id="result-image" class="result-media hidden" alt="생성 결과" />
-      </section>
-    </main>
+        <!-- Content area -->
+        <main class="main-content">
+
+          <!-- Welcome screen -->
+          <div class="welcome" id="welcome-screen">
+            <div class="welcome-icon">
+              <svg width="60" height="60" viewBox="0 0 24 24">
+                <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" fill="url(#welcomeGrad)"/>
+                <defs>
+                  <linearGradient id="welcomeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#4285f4"/>
+                    <stop offset="50%" stop-color="#9b72cb"/>
+                    <stop offset="100%" stop-color="#d96570"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <h1 class="welcome-heading">
+              <span class="grad-text">무엇을 만들어볼까요?</span>
+            </h1>
+            <p class="welcome-sub">프롬프트를 입력하면 AI가 이미지를 생성합니다</p>
+          </div>
+
+          <!-- Result screen -->
+          <div class="result-area hidden" id="result-screen">
+            <div class="prompt-bubble" id="result-prompt"></div>
+            <div class="result-card">
+              <div class="result-header">
+                <svg width="16" height="16" viewBox="0 0 24 24">
+                  <path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" fill="url(#cardGrad)"/>
+                  <defs>
+                    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#4285f4"/>
+                      <stop offset="100%" stop-color="#9b72cb"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <span class="result-label">Image Studio</span>
+              </div>
+              <p class="result-status" id="status"></p>
+              <img id="result-image" class="result-image hidden" alt="생성 결과" />
+            </div>
+          </div>
+
+        </main>
+
+        <!-- Input area -->
+        <div class="input-area">
+          <form id="generate-form">
+            <div class="prompt-box">
+              <textarea
+                id="prompt"
+                class="prompt-input"
+                rows="1"
+                placeholder="이미지를 묘사해보세요..."
+                required
+              ></textarea>
+              <button type="submit" id="submit-button" class="send-btn" disabled>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                </svg>
+              </button>
+            </div>
+          </form>
+          <p class="disclaimer">AI가 생성하는 콘텐츠는 실제와 다를 수 있습니다</p>
+          <footer class="footer">(주)에듀엠지티 &nbsp;|&nbsp; <a href="https://www.edumgt.co.kr" target="_blank" rel="noopener">www.edumgt.co.kr</a></footer>
+        </div>
+
+      </div>
+    </div>
 
     <script src="/static/app.js"></script>
   </body>

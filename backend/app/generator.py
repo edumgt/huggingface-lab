@@ -76,7 +76,6 @@ class GeneratorService:
         return [
             "runwayml/stable-diffusion-v1-5",
             "stabilityai/sdxl-turbo",
-            "stabilityai/stable-diffusion-3-medium-diffusers",
         ]
 
     # ------------------------------------------------------------------

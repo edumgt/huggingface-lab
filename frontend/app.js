@@ -1,3 +1,6 @@
+const SEND_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`;
+const SPIN_ICON = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2a10 10 0 0 1 10 10"/></svg>`;
+
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
   if (!response.ok) {
@@ -8,24 +11,20 @@ async function fetchJson(url, options) {
 }
 
 function toggleModeUI(outputType) {
-  const imageFields = document.querySelectorAll('.image-only');
-  const videoFields = document.querySelectorAll('.video-only');
   const isImage = outputType === 'image';
-
-  imageFields.forEach((field) => field.classList.toggle('hidden', !isImage));
-  videoFields.forEach((field) => field.classList.toggle('hidden', isImage));
+  document.querySelectorAll('.image-only').forEach((el) => el.classList.toggle('hidden', !isImage));
+  document.querySelectorAll('.video-only').forEach((el) => el.classList.toggle('hidden', isImage));
 }
 
 async function initializeForm() {
   const data = await fetchJson('/api/options');
   const modelSelect = document.getElementById('model-id');
-
   modelSelect.innerHTML = '';
-  data.models.forEach((modelId) => {
-    const option = document.createElement('option');
-    option.value = modelId;
-    option.textContent = modelId;
-    modelSelect.appendChild(option);
+  data.models.forEach((id) => {
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id;
+    modelSelect.appendChild(opt);
   });
 }
 
@@ -41,21 +40,53 @@ function readPayload() {
   };
 }
 
+function showResult(promptText) {
+  document.getElementById('welcome-screen').classList.add('hidden');
+  const screen = document.getElementById('result-screen');
+  screen.classList.remove('hidden');
+  document.getElementById('result-prompt').textContent = promptText;
+  screen.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetToWelcome() {
+  document.getElementById('welcome-screen').classList.remove('hidden');
+  document.getElementById('result-screen').classList.add('hidden');
+  document.getElementById('result-image').classList.add('hidden');
+  document.getElementById('result-image').src = '';
+  document.getElementById('result-prompt').textContent = '';
+  document.getElementById('status').textContent = '';
+  const promptEl = document.getElementById('prompt');
+  promptEl.value = '';
+  promptEl.style.height = 'auto';
+  updateSendBtn();
+}
+
+function updateSendBtn() {
+  const btn = document.getElementById('submit-button');
+  btn.disabled = !document.getElementById('prompt').value.trim();
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 180) + 'px';
+}
+
 async function generate(event) {
   event.preventDefault();
 
   const statusEl = document.getElementById('status');
-  const resultImage = document.getElementById('result-image');
-  const button = document.getElementById('submit-button');
-
+  const resultImg = document.getElementById('result-image');
+  const btn = document.getElementById('submit-button');
   const payload = readPayload();
 
-  if (!payload.prompt) {
-    statusEl.textContent = '프롬프트를 입력해 주세요.';
-    return;
-  }
+  if (!payload.prompt) return;
 
-  button.disabled = true;
+  showResult(payload.prompt);
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.innerHTML = SPIN_ICON;
+  resultImg.classList.add('hidden');
   statusEl.textContent = '생성 중...';
 
   try {
@@ -65,30 +96,51 @@ async function generate(event) {
       body: JSON.stringify(payload),
     });
 
-    const cacheBustedFileUrl = `${data.file_url}?t=${Date.now()}`;
-    resultImage.src = data.data_url || cacheBustedFileUrl;
-    resultImage.classList.remove('hidden');
-    statusEl.textContent = `완료: ${data.model_id} / ${data.width}x${data.height}`;
-  } catch (error) {
-    statusEl.textContent = `실패: ${error.message}`;
+    resultImg.src = data.data_url || `${data.file_url}?t=${Date.now()}`;
+    resultImg.classList.remove('hidden');
+    statusEl.textContent = `${data.model_id} · ${data.width}×${data.height}`;
+  } catch (err) {
+    statusEl.textContent = `오류: ${err.message}`;
   } finally {
-    button.disabled = false;
+    btn.classList.remove('loading');
+    btn.innerHTML = SEND_ICON;
+    updateSendBtn();
   }
 }
 
 async function boot() {
+  const sidebar = document.getElementById('sidebar');
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+  });
+
+  document.getElementById('new-gen-btn').addEventListener('click', resetToWelcome);
+
   const outputTypeEl = document.getElementById('output-type');
-  outputTypeEl.addEventListener('change', (event) => toggleModeUI(event.target.value));
+  outputTypeEl.addEventListener('change', (e) => toggleModeUI(e.target.value));
+  toggleModeUI(outputTypeEl.value);
+
+  const promptEl = document.getElementById('prompt');
+  promptEl.addEventListener('input', () => {
+    autoResize(promptEl);
+    updateSendBtn();
+  });
+
+  promptEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!document.getElementById('submit-button').disabled) {
+        document.getElementById('generate-form').requestSubmit();
+      }
+    }
+  });
 
   try {
     await initializeForm();
-  } catch (error) {
-    const statusEl = document.getElementById('status');
-    statusEl.textContent = '초기 데이터 로드 실패';
-    statusEl.classList.add('muted');
+  } catch {
+    document.getElementById('status').textContent = '초기 데이터 로드 실패';
   }
 
-  toggleModeUI(outputTypeEl.value);
   document.getElementById('generate-form').addEventListener('submit', generate);
 }
 
