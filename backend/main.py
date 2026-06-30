@@ -1,12 +1,13 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.app.generator import GenerateRequest, GenerationResult, GeneratorService
+from backend.app.stock import StockChartRequest, StockChartResult, StockChartService
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 FRONTEND_DIR = BASE_DIR / "frontend"
@@ -25,10 +26,19 @@ class GenerationOptions(BaseModel):
     models: list[str]
     output_types: list[str]
     video_sizes: list[str]
+    style_presets: list[str]
+
+
+class StockOptions(BaseModel):
+    periods: list[str]
+    intervals: list[str]
+    chart_types: list[str]
+    indicators: list[str]
 
 
 app = FastAPI(title="python-generate-image studio", version="2.0.0")
 service = GeneratorService(output_dir=OUTPUT_DIR)
+stock_service = StockChartService(output_dir=OUTPUT_DIR)
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,12 +66,31 @@ def options() -> GenerationOptions:
         models=service.available_models(),
         output_types=["image", "video"],
         video_sizes=list(service.VIDEO_SIZES.keys()),
+        style_presets=service.available_style_presets(),
     )
 
 
 @app.post("/api/generate", response_model=GenerationResult)
 def generate(payload: GenerateRequest) -> GenerationResult:
     return service.generate(payload)
+
+
+@app.get("/api/stock-options", response_model=StockOptions)
+def stock_options() -> StockOptions:
+    return StockOptions(
+        periods=stock_service.available_periods(),
+        intervals=stock_service.available_intervals(),
+        chart_types=stock_service.available_chart_types(),
+        indicators=stock_service.available_indicators(),
+    )
+
+
+@app.post("/api/stock-chart", response_model=StockChartResult)
+def stock_chart(payload: StockChartRequest) -> StockChartResult:
+    try:
+        return stock_service.generate(payload)
+    except (RuntimeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 if FRONTEND_DIR.exists():

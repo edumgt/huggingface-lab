@@ -28,6 +28,21 @@ except ImportError:
     logger.info("diffusers/torch not installed — using SVG preview fallback")
 
 
+STYLE_PRESETS: dict[str, str] = {
+    "none": "",
+    "finance_poster": (
+        "financial poster design, stock market growth chart background, bold modern "
+        "headline typography, gold and navy color palette, glowing line graph, "
+        "corporate fintech branding, high contrast, sleek, 4k"
+    ),
+    "infographic": (
+        "clean infographic style, flat design icons, data dashboard layout, soft "
+        "gradient background, minimal vector illustration, financial statistics "
+        "panels, organized grid composition, crisp typography"
+    ),
+}
+
+
 class GenerateRequest(BaseModel):
     model_config = {"protected_namespaces": ()}
     model_id: str = Field(min_length=1)
@@ -36,6 +51,7 @@ class GenerateRequest(BaseModel):
     width: int = Field(default=768, ge=256, le=1536)
     height: int = Field(default=768, ge=256, le=1536)
     video_size: str = Field(default="square")
+    style_preset: str = Field(default="none")
 
     @field_validator("video_size")
     @classmethod
@@ -44,6 +60,18 @@ class GenerateRequest(BaseModel):
         if value not in allowed:
             raise ValueError(f"video_size must be one of {sorted(allowed)}")
         return value
+
+    @field_validator("style_preset")
+    @classmethod
+    def validate_style_preset(cls, value: str) -> str:
+        if value not in STYLE_PRESETS:
+            raise ValueError(f"style_preset must be one of {sorted(STYLE_PRESETS)}")
+        return value
+
+    @property
+    def styled_prompt(self) -> str:
+        suffix = STYLE_PRESETS[self.style_preset]
+        return f"{self.prompt}, {suffix}" if suffix else self.prompt
 
 
 class GenerationResult(BaseModel):
@@ -77,6 +105,10 @@ class GeneratorService:
             "runwayml/stable-diffusion-v1-5",
             "stabilityai/sdxl-turbo",
         ]
+
+    @staticmethod
+    def available_style_presets() -> list[str]:
+        return list(STYLE_PRESETS.keys())
 
     # ------------------------------------------------------------------
     # Public API
@@ -116,7 +148,7 @@ class GeneratorService:
     def _generate_ai(self, request: GenerateRequest, width: int, height: int) -> GenerationResult:
         pipe = self._load_pipeline(request.model_id)
         image = pipe(
-            prompt=request.prompt,
+            prompt=request.styled_prompt,
             width=width,
             height=height,
             num_inference_steps=20,
@@ -148,7 +180,7 @@ class GeneratorService:
         label = "IMAGE" if request.output_type == "image" else f"VIDEO PREVIEW ({request.video_size})"
         output_path, svg_content = self._create_preview_svg(
             model_id=request.model_id,
-            prompt=request.prompt,
+            prompt=request.styled_prompt,
             width=width,
             height=height,
             label=label,

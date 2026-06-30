@@ -10,3 +10,7 @@ diffusers==0.29.2
 transformers==4.42.4
 accelerate==0.31.0
 Pillow==10.4.0
+# Stock chart generation (real market data)
+yfinance==1.5.1
+pandas==2.2.2
+matplotlib==3.9.0
